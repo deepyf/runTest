@@ -54,7 +54,23 @@ with open("ghOut", "w", newline="", encoding="utf-8") as fout:
         O = info.get("numberOfAnalystOpinions","") or ""
         T1 = info.get("targetMeanPrice","") or ""
         T2 = info.get("targetMedianPrice","") or ""
-        T3 = info.get("recommendationTrend","") or ""
+        
+        # Check if there are analyst recommendations for 0m (current month)
+        T3 = ""
+        rec_trend = info.get("recommendationTrend")
+        if rec_trend and isinstance(rec_trend, dict):
+            trend_list = rec_trend.get("trend", [])
+            if trend_list and len(trend_list) > 0:
+                # Look for the 0m period
+                for trend in trend_list:
+                    if trend.get("period") == "0m":
+                        # Count total recommendations
+                        total = (trend.get("strongBuy", 0) + trend.get("buy", 0) + 
+                                trend.get("hold", 0) + trend.get("sell", 0) + 
+                                trend.get("strongSell", 0))
+                        T3 = total
+                        break
+
         V1 = info.get("averageDailyVolume10Day","") or ""
         V2 = info.get("averageVolume10days","") or ""
         V3 = info.get("averageDailyVolume3Month","") or ""
