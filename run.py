@@ -30,7 +30,7 @@ with open("ghIn", newline="") as fin:
 
 with open("ghOut", "w", newline="", encoding="utf-8") as fout:
     writer = csv.writer(fout)
-    writer.writerow(["T","P1","P2","O","T1","T2","V1","V2","V3","V4","C","S","I"])
+    writer.writerow(["T","P1","P2","O","T1","T2","T3","V1","V2","V3","V4","C","S","I"])
     for sym in symbols:
         info = {}
         for attempt in range(4):
@@ -54,6 +54,7 @@ with open("ghOut", "w", newline="", encoding="utf-8") as fout:
         O = info.get("numberOfAnalystOpinions","") or ""
         T1 = info.get("targetMeanPrice","") or ""
         T2 = info.get("targetMedianPrice","") or ""
+        T3 = info.get("recommendationTrend","") or ""
         V1 = info.get("averageDailyVolume10Day","") or ""
         V2 = info.get("averageVolume10days","") or ""
         V3 = info.get("averageDailyVolume3Month","") or ""
@@ -61,5 +62,5 @@ with open("ghOut", "w", newline="", encoding="utf-8") as fout:
         C = info.get("marketCap","") or ""
         S = info.get("sector","") or ""
         I = info.get("industry","") or ""
-        writer.writerow([sym, P1, P2, O, T1, T2, V1, V2, V3, V4, C, S, I])
+        writer.writerow([sym, P1, P2, O, T1, T2, T3, V1, V2, V3, V4, C, S, I])
         time.sleep(random.uniform(1.7,2))
