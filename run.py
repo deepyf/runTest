@@ -33,11 +33,13 @@ with open("ghOut", "w", newline="", encoding="utf-8") as fout:
     writer.writerow(["T","P1","P2","O","T1","T2","T3","V1","V2","V3","V4","C","S","I"])
     for sym in symbols:
         info = {}
+        ticker = None
         for attempt in range(4):
             try:
                 sess = get_session()
                 yf.utils.requests = sess
-                info = yf.Ticker(sym).info or {}
+                ticker = yf.Ticker(sym)
+                info = ticker.info or {}
                 break
             except Exception:
                 if attempt == 0:
@@ -49,28 +51,45 @@ with open("ghOut", "w", newline="", encoding="utf-8") as fout:
                 else:
                     break
                 time.sleep(wait)
+        
         P1 = info.get("currentPrice","") or ""
         P2 = info.get("regularMarketPrice","") or ""
         O = info.get("numberOfAnalystOpinions","") or ""
         T1 = info.get("targetMeanPrice","") or ""
         T2 = info.get("targetMedianPrice","") or ""
         
-        # Check if there are analyst recommendations for 0m (current month)
+        # Get analyst recommendations for 0m period
         T3 = ""
-        rec_trend = info.get("recommendationTrend")
-        if rec_trend and isinstance(rec_trend, dict):
-            trend_list = rec_trend.get("trend", [])
-            if trend_list and len(trend_list) > 0:
-                # Look for the 0m period
-                for trend in trend_list:
-                    if trend.get("period") == "0m":
-                        # Count total recommendations
-                        total = (trend.get("strongBuy", 0) + trend.get("buy", 0) + 
-                                trend.get("hold", 0) + trend.get("sell", 0) + 
-                                trend.get("strongSell", 0))
-                        T3 = total
-                        break
-
+        if ticker is not None:
+            try:
+                # Check if recommendationTrend exists as a property
+                if hasattr(ticker, 'recommendation_trend') and ticker.recommendation_trend is not None:
+                    df = ticker.recommendation_trend
+                    if not df.empty and 'period' in df.columns:
+                        # Filter for 0m period
+                        zero_m = df[df['period'] == '0m']
+                        if not zero_m.empty:
+                            # Sum all recommendation types
+                            rec_cols = ['strongBuy', 'buy', 'hold', 'sell', 'strongSell']
+                            existing_cols = [col for col in rec_cols if col in zero_m.columns]
+                            if existing_cols:
+                                T3 = int(zero_m[existing_cols].sum(axis=1).iloc[0])
+            except Exception as e:
+                # Fallback: try getting from info dict
+                try:
+                    rec_trend = info.get("recommendationTrend")
+                    if rec_trend and isinstance(rec_trend, dict):
+                        trend_list = rec_trend.get("trend", [])
+                        for trend in trend_list:
+                            if trend.get("period") == "0m":
+                                total = (trend.get("strongBuy", 0) + trend.get("buy", 0) + 
+                                        trend.get("hold", 0) + trend.get("sell", 0) + 
+                                        trend.get("strongSell", 0))
+                                T3 = total
+                                break
+                except:
+                    pass
+        
         V1 = info.get("averageDailyVolume10Day","") or ""
         V2 = info.get("averageVolume10days","") or ""
         V3 = info.get("averageDailyVolume3Month","") or ""
